@@ -56,8 +56,12 @@ module.exports = createCoreController('api::authentication.authentication',({ st
           ctx.redirect(`${frontendUrl}/success?token=${data.token}`);
           
         } catch (err) {
-          console.log(err);
-          ctx.throw(500, 'Unable to save request token');
+          const errorMessage = 'Either a token code for the day already exists, or something went wrong during the authentication process.';
+          const frontendErrorUrl = env('FLATTRADE_FRONTEND_ERROR_URL');
+          const redirectUrl = `${frontendErrorUrl}?message=${encodeURIComponent(errorMessage)}`;
+        
+          // Redirect with 302 status code to indicate a temporary redirect
+          return ctx.redirect(302, redirectUrl);
         }
       },
       async findOne(ctx) {
