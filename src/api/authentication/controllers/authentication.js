@@ -14,8 +14,7 @@ module.exports = createCoreController('api::authentication.authentication',({ st
     //Custom function for User authentication from Flattrade
     async handleRequestToken(ctx) {
         const frontendUrl = env('FLATTRADE_FRONTEND_URL');
-        const frontendErrorUrl = env('FLATTRADE_FRONTEND_ERROR_URL');
-        try {       
+        const frontendErrorUrl = env('FLATTRADE_FRONTEND_ERROR_URL');            
           // Retrieve the requestToken from query params
           const { code } = ctx.query;
     
@@ -53,16 +52,8 @@ module.exports = createCoreController('api::authentication.authentication',({ st
             create: { requestToken: data.token }, // Create a new entry if no token exists today
           });
           // Redirect to the success page
-          ctx.redirect(`${frontendUrl}/success?token=${data.token}`);
-          
-        } catch (err) {
-          const errorMessage = 'Either a token code for the day already exists, or something went wrong during the authentication process.';
-          const frontendErrorUrl = env('FLATTRADE_FRONTEND_ERROR_URL');
-          const redirectUrl = `${frontendErrorUrl}?message=${encodeURIComponent(errorMessage)}`;
+          ctx.redirect(`${frontendUrl}/success?token=${data.token}`);         
         
-          // Redirect with 302 status code to indicate a temporary redirect
-          return ctx.redirect(302, redirectUrl);
-        }
       },
       async findOne(ctx) {
         const { id } = ctx.params;
