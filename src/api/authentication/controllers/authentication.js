@@ -13,8 +13,8 @@ const { createCoreController } = require('@strapi/strapi').factories;
 module.exports = createCoreController('api::authentication.authentication',({ strapi }) => ({
     //Custom function for User authentication from Flattrade
     async handleRequestToken(ctx) {
-        const frontendUrl = env('FLATTRADE_FRONTEND_URL');
-        const frontendErrorUrl = env('FLATTRADE_FRONTEND_ERROR_URL');            
+        const frontendUrl = env('DOMAIN_URL');
+        const frontendErrorUrl = env('ERROR_HANDLER_URL');            
           // Retrieve the requestToken from query params
           const { code } = ctx.query;
     
@@ -41,18 +41,30 @@ module.exports = createCoreController('api::authentication.authentication',({ st
             body: JSON.stringify( payload ),
           });
           const data = await tokenResponse.json();
+          console.log(data);
           // Check if token retrieval was successful
-          if (data.stat !== 'Ok' || !data.token) {
-            return ctx.redirect(`${frontendErrorUrl}/?message=${encodeURIComponent(data.emsg || 'Failed to retrieve token')}`);
+          if (data.token.length === 0 || !data.token) {
+            return ctx.redirect(`${frontendErrorUrl}/?message=${encodeURIComponent(data.emsg || 'Either a token code for the day already exists, or something went wrong during the authentication process.')}`);
           }
-           // Create or update the token for the day
-          await strapi.db.query('api::authentication.authentication').upsert({
-            where: { createdAt: { $gte: new Date().setHours(0, 0, 0, 0) } }, // Today's token check
-            update: { requestToken: data.token }, // Update existing token
-            create: { requestToken: data.token }, // Create a new entry if no token exists today
-          });
+          // Retrieve all tokens (without any conditions)
+          const existingTokens = await strapi.db.query('api::authentication.authentication').findMany();
+
+          // Check if any tokens exist
+          if (existingTokens.length === 0) {
+            // No tokens found, create a new one
+            await strapi.db.query('api::authentication.authentication').create({
+              data: { requestToken: data.token },
+            });
+          } else {
+            // Token(s) found, update the first one (or you could update all if necessary)
+            await strapi.db.query('api::authentication.authentication').update({
+              where: { id: existingTokens[0].id }, // Update the first found token
+              data: { requestToken: data.token },
+            });
+          }
+   
           // Redirect to the success page
-          ctx.redirect(`${frontendUrl}/success?token=${data.token}`);         
+          ctx.redirect(`${frontendUrl}/?message=${encodeURIComponent('Login successful and token successfully generated')}`);         
         
       },
       async findOne(ctx) {
@@ -65,7 +77,7 @@ module.exports = createCoreController('api::authentication.authentication',({ st
       async handleUndefinedRoute(ctx) {
         // Redirect to the frontend error page with a descriptive message
         const errorMessage = 'Either a token code for the day already exists, or something went wrong during the authentication process.';
-        const frontendErrorUrl = env('FLATTRADE_FRONTEND_ERROR_URL');
+        const frontendErrorUrl = env('ERROR_HANDLER_URL');
         const redirectUrl = `${frontendErrorUrl}?message=${encodeURIComponent(errorMessage)}`;
         
         // Redirect with 302 status code to indicate a temporary redirect
