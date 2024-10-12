@@ -44,7 +44,7 @@ module.exports = createCoreController('api::authentication.authentication',({ st
           console.log(data);
           // Check if token retrieval was successful
           if (data.token.length === 0 || !data.token) {
-            return ctx.redirect(`${frontendErrorUrl}/?message=${encodeURIComponent(data.emsg || 'Either a token code for the day already exists, or something went wrong during the authentication process.')}`);
+            return ctx.redirect(`${frontendErrorUrl}/?message=${encodeURIComponent('Either a token code for the day already exists, or something went wrong during the authentication process.')}`);
           }
           // Retrieve all tokens (without any conditions)
           const existingTokens = await strapi.db.query('api::authentication.authentication').findMany();
