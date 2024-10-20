@@ -13,7 +13,7 @@ export interface ApiAuthenticationAuthentication
     draftAndPublish: true;
   };
   attributes: {
-    requestToken: Schema.Attribute.String & Schema.Attribute.Private;
+    requestToken: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
@@ -25,6 +25,52 @@ export interface ApiAuthenticationAuthentication
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::authentication.authentication'
+    >;
+  };
+}
+
+export interface ApiVariableVariable extends Struct.CollectionTypeSchema {
+  collectionName: 'variables';
+  info: {
+    singularName: 'variable';
+    pluralName: 'variables';
+    displayName: 'variable';
+    description: '';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    basePrice: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    resistance1: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    resistance2: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    support1: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    support2: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    targetStep: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<20>;
+    index: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::variable.variable'
     >;
   };
 }
@@ -880,6 +926,7 @@ declare module '@strapi/strapi' {
   export module Public {
     export interface ContentTypeSchemas {
       'api::authentication.authentication': ApiAuthenticationAuthentication;
+      'api::variable.variable': ApiVariableVariable;
       'plugin::upload.file': PluginUploadFile;
       'plugin::upload.folder': PluginUploadFolder;
       'plugin::i18n.locale': PluginI18NLocale;

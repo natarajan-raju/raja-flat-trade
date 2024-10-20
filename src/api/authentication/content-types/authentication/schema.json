@@ -13,8 +13,7 @@
   "pluginOptions": {},
   "attributes": {
     "requestToken": {
-      "type": "string",
-      "private": true
+      "type": "string"
     }
   }
 }

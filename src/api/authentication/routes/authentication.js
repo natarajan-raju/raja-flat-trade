@@ -13,6 +13,33 @@ module.exports = {
     },
     {
       method: 'GET',
+      path: '/authentications/handleWebsocketConnection',
+      handler: 'api::authentication.authentication.handleWebsocketConnection',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },    
+    {
+      method: 'GET',
+      path: '/authentications/getUserDetails',
+      handler: 'api::authentication.authentication.getUserDetails',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },    
+    {
+      method: 'GET',
+      path: '/authentications/initiateApplication',
+      handler: 'api::authentication.authentication.initiateApplication',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },    
+    {
+      method: 'GET',
       path: '/authentications/undefined',
       handler: 'api::authentication.authentication.handleUndefinedRoute', // Your custom token handling logic
       config: {
@@ -65,6 +92,7 @@ module.exports = {
         middlewares: [],
       },
     },
+   
    
   ],
 };

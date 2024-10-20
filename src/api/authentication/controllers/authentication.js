@@ -2,6 +2,8 @@
 // @ts-ignore
 const { env } = require('@strapi/utils');
 const { sha256 } = require('js-sha256');
+const { connectFlattradeWebSocket } = require('../../../../config/functions/websocketClient');
+const {fetchRequestToken } = require('../../../../config/functions/fetchRequestToken');
 
 /**
  * authentication controller
@@ -9,6 +11,7 @@ const { sha256 } = require('js-sha256');
 
 // @ts-ignore
 const { createCoreController } = require('@strapi/strapi').factories;
+
 
 module.exports = createCoreController('api::authentication.authentication',({ strapi }) => ({
     //Custom function for User authentication from Flattrade
@@ -46,23 +49,42 @@ module.exports = createCoreController('api::authentication.authentication',({ st
           if (data.token.length === 0 || !data.token) {
             return ctx.redirect(`${frontendErrorUrl}/?message=${encodeURIComponent('Either a token code for the day already exists, or something went wrong during the authentication process.')}`);
           }
-          // Retrieve all tokens (without any conditions)
-          const existingTokens = await strapi.db.query('api::authentication.authentication').findMany();
+
+          
+          // Retrieve all tokens (without any conditions) from database
+          const requestTokenResponse = await fetchRequestToken()
+                          .then((data) => {return {
+                            requestToken: data.requestToken,
+                            id: data.id
+                            }
+                          })
+                          .catch((err) => {
+                            console.log({err});
+                            return {
+                              requestToken: false,
+                              id: '',
+                            };
+                          });;
 
           // Check if any tokens exist
-          if (existingTokens.length === 0) {
+          const existingRequestToken = requestTokenResponse.requestToken;
+          if (!existingRequestToken) {
             // No tokens found, create a new one
             await strapi.db.query('api::authentication.authentication').create({
               data: { requestToken: data.token },
             });
           } else {
+            
             // Token(s) found, update the first one (or you could update all if necessary)
             await strapi.db.query('api::authentication.authentication').update({
-              where: { id: existingTokens[0].id }, // Update the first found token
+              where: { id: requestTokenResponse.id }, // Update the first found token
               data: { requestToken: data.token },
             });
           }
-   
+          // //Connect to websocket once token is generated
+          // const userId = env('FLATTRADE_USER_ID');
+          // const accountId = env('FLATTRADE_ACCOUNT_ID');
+          // connectFlattradeWebSocket(userId, data.token, accountId);
           // Redirect to the success page
           ctx.redirect(`${frontendUrl}/?message=${encodeURIComponent('Login successful and token successfully generated')}`);         
         
@@ -83,4 +105,123 @@ module.exports = createCoreController('api::authentication.authentication',({ st
         // Redirect with 302 status code to indicate a temporary redirect
         return ctx.redirect(302, redirectUrl);
       },
+
+      //Handle Web socket connection
+      async handleWebsocketConnection(ctx) {
+        // Try to fetch the request token        
+        const requestTokenResponse = await fetchRequestToken()
+                          .then((data) => {return {
+                            requestToken: data.requestToken,
+                            id: data.id
+                            }
+                          })
+                          .catch((err) => {
+                            console.log({err});
+                            return {
+                              requestToken: false,
+                              id: '',
+                            };
+                          });;
+
+          // Check if any tokens exist
+        const requestToken = requestTokenResponse.requestToken;
+        if(!requestToken){
+          return {
+            message: 'Request token not found',            
+          }
+        }
+        const userId = env('FLATTRADE_USER_ID');
+        const accountId = env('FLATTRADE_ACCOUNT_ID');
+        connectFlattradeWebSocket(userId, requestToken, accountId);
+        return ctx.send('Websocket connection request in progress...');
+      },
+
+      //Handle Application initiation
+      async initiateApplication(ctx){
+        //Initiate Web socket connection
+        const requestTokenResponse = await fetchRequestToken()
+                                    .then((data) => {return {
+                                      requestToken: data.requestToken,
+                                      id: data.id
+                                    }})
+                                    .catch((err) => {
+                                      console.log({err});
+                                      return {
+                                        requestToken: false,
+                                        id: '',
+                                      };
+                                    });
+
+          // Check if any tokens exist
+        const requestToken = requestTokenResponse.requestToken;
+        if(!requestToken){
+          return {
+            message: 'Request token not found',            
+          }
+        }
+        const userId = env('FLATTRADE_USER_ID');
+        const accountId = env('FLATTRADE_ACCOUNT_ID');
+        const scripList = 'NSE|26000#NSE|26013#NSE|26037#NSE|26009';
+        try {
+          // Connect to Flattrade WebSocket and subscribe to scrips
+          const result = await connectFlattradeWebSocket(userId, requestToken, accountId, scripList);
+      
+          // Once the promise is resolved, return a response to the frontend
+          ctx.send({
+            message: result, // This will send the resolved message
+            status: 'success'
+          });
+        } catch (error) {
+          console.error('Error connecting to Flattrade WebSocket:', error);
+          ctx.send({
+            message: 'Failed to connect or subscribe to scrips',
+            error: error.message,
+            status: 'error'
+          });
+        }
+
+      },
+      
+      async getUserDetails(ctx) {
+        // Retrieve all tokens (without any conditions)
+        const uid = env('FLATTRADE_USER_ID');
+       
+        const jData = JSON.stringify({ uid });
+        const requestTokenResponse = await fetchRequestToken()
+                          .then((data) => {return {
+                            requestToken: data.requestToken,
+                            id: data.id
+                            }
+                          })
+                          .catch((err) => {
+                            console.log({err});
+                            return {
+                              requestToken: false,
+                              id: '',
+                            };
+                          });;
+
+          // Check if any tokens exist
+        const jKey = requestTokenResponse.requestToken;
+        
+        // Create a URL-encoded string for the body
+        const payload = new URLSearchParams({
+            jData: jData, // Directly assign the JSON string
+            jKey: jKey
+        }).toString();
+        
+        const response = await fetch('https://piconnect.flattrade.in/PiConnectTP/UserDetails', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: payload, // Use the URL-encoded string
+        });
+    
+        const data = await response.json();
+        return data;
+      },
+
+
 }));
+

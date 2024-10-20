@@ -1,0 +1,50 @@
+{
+  "kind": "collectionType",
+  "collectionName": "variables",
+  "info": {
+    "singularName": "variable",
+    "pluralName": "variables",
+    "displayName": "variable",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "basePrice": {
+      "type": "decimal",
+      "required": true,
+      "default": 0
+    },
+    "resistance1": {
+      "type": "decimal",
+      "required": true,
+      "default": 0
+    },
+    "resistance2": {
+      "type": "decimal",
+      "required": true,
+      "default": 0
+    },
+    "support1": {
+      "type": "decimal",
+      "required": true,
+      "default": 0
+    },
+    "support2": {
+      "type": "decimal",
+      "required": true,
+      "default": 0
+    },
+    "targetStep": {
+      "type": "decimal",
+      "default": 20
+    },
+    "index": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    }
+  }
+}
