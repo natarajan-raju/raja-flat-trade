@@ -28,16 +28,7 @@ module.exports = {
         policies: [],
         middlewares: [],
       },
-    },    
-    {
-      method: 'GET',
-      path: '/authentications/initiateApplication',
-      handler: 'api::authentication.authentication.initiateApplication',
-      config: {
-        policies: [],
-        middlewares: [],
-      },
-    },    
+    },        
     {
       method: 'GET',
       path: '/authentications/undefined',

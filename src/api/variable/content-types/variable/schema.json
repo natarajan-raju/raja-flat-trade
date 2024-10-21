@@ -45,6 +45,13 @@
       "type": "string",
       "required": true,
       "unique": true
+    },
+    "token": {
+      "type": "integer"
+    },
+    "amount": {
+      "type": "integer",
+      "default": 0
     }
   }
 }

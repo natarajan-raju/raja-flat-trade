@@ -132,54 +132,9 @@ module.exports = createCoreController('api::authentication.authentication',({ st
         }
         const userId = env('FLATTRADE_USER_ID');
         const accountId = env('FLATTRADE_ACCOUNT_ID');
-        connectFlattradeWebSocket(userId, requestToken, accountId);
+        const scripList = 'NSE|NIFTY#NSE|BANKNIFTY';
+        connectFlattradeWebSocket(userId, requestToken, accountId,scripList);
         return ctx.send('Websocket connection request in progress...');
-      },
-
-      //Handle Application initiation
-      async initiateApplication(ctx){
-        //Initiate Web socket connection
-        const requestTokenResponse = await fetchRequestToken()
-                                    .then((data) => {return {
-                                      requestToken: data.requestToken,
-                                      id: data.id
-                                    }})
-                                    .catch((err) => {
-                                      console.log({err});
-                                      return {
-                                        requestToken: false,
-                                        id: '',
-                                      };
-                                    });
-
-          // Check if any tokens exist
-        const requestToken = requestTokenResponse.requestToken;
-        if(!requestToken){
-          return {
-            message: 'Request token not found',            
-          }
-        }
-        const userId = env('FLATTRADE_USER_ID');
-        const accountId = env('FLATTRADE_ACCOUNT_ID');
-        const scripList = 'NSE|26000#NSE|26013#NSE|26037#NSE|26009';
-        try {
-          // Connect to Flattrade WebSocket and subscribe to scrips
-          const result = await connectFlattradeWebSocket(userId, requestToken, accountId, scripList);
-      
-          // Once the promise is resolved, return a response to the frontend
-          ctx.send({
-            message: result, // This will send the resolved message
-            status: 'success'
-          });
-        } catch (error) {
-          console.error('Error connecting to Flattrade WebSocket:', error);
-          ctx.send({
-            message: 'Failed to connect or subscribe to scrips',
-            error: error.message,
-            status: 'error'
-          });
-        }
-
       },
       
       async getUserDetails(ctx) {

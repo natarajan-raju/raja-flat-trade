@@ -2,46 +2,31 @@ const WebSocket = require('ws');
 
 const flattradeWsUrl = 'wss://piconnect.flattrade.in/PiConnectWSTp/';
 let flattradeWs;
-let frontendClients = [];
 
-// Create WebSocket server for frontend clients
-const wsServer = new WebSocket.Server({ port: 8080 }); // Or your preferred port
-
-wsServer.on('connection', (ws) => {
-  console.log('Frontend client connected');
-  frontendClients.push(ws);
-
-  ws.on('close', () => {
-    console.log('Frontend client disconnected');
-    frontendClients = frontendClients.filter(client => client !== ws);
-  });
-});
 
 //Connect to Websocket & subscribe
 const connectFlattradeWebSocket = (userId, sessionToken, accountId, scripList) => {
-  return new Promise((resolve, reject) => {
+  
     flattradeWs = new WebSocket(flattradeWsUrl);
-
     flattradeWs.on('open', () => {
       console.log('Flattrade WebSocket connection established.');
       sendConnectionRequest(userId, sessionToken, accountId);
-    });
+
 
     flattradeWs.on('message', (data) => {
       const messageString = Buffer.isBuffer(data) ? data.toString() : data;
       // @ts-ignore
       const message = JSON.parse(messageString);
-      handleIncomingMessage(message, resolve, reject, scripList);
+      handleIncomingMessage(message, scripList);
     });
 
     flattradeWs.on('close', () => {
       console.log('Flattrade WebSocket connection closed. Attempting reconnect...');
-      setTimeout(() => connectFlattradeWebSocket(userId, sessionToken, accountId), 5000);
+      setTimeout(() => connectFlattradeWebSocket(userId, sessionToken, accountId,scripList), 5000);
     });
 
     flattradeWs.on('error', (error) => {
-      console.error('Flattrade WebSocket error:', error);
-      reject(error); // Reject the promise on error
+      console.error('Flattrade WebSocket error:', error);      
     });
   });
 };
@@ -59,7 +44,7 @@ const sendConnectionRequest = (userId, sessionToken, accountId) => {
   flattradeWs.send(JSON.stringify(connectPayload));
 };
 
-const handleIncomingMessage = (message, resolve, reject, scripList) => {
+const handleIncomingMessage = (message, scripList) => {
   console.log('Received message:', message);
 
   switch (message.t) {
@@ -68,19 +53,16 @@ const handleIncomingMessage = (message, resolve, reject, scripList) => {
         console.log('Connection acknowledged for user:', message.uid);
         subscribeTouchline(scripList);
       } else {
-        console.error('Connection failed: Invalid user ID or session token.');
-        reject(new Error('Connection failed: Invalid user ID or session token.'));
+        console.error('Connection failed: Invalid user ID or session token.');       
       }
       break;
 
     case 'tk':
-      console.log('Subscription acknowledged:', message);
-      resolve('Subscription done for scriplist: ' + scripList); // Resolve when subscription is done
+      console.log('Subscription acknowledged:', message);      
       break;
 
     case 'tf':
-      console.log('Touchline feed:', message);
-      broadcastToFrontendClients(message);
+      console.log('Touchline feed:', message);      
       break;
 
     case 'uk':
@@ -102,13 +84,7 @@ const subscribeTouchline = (scripList) => {
   flattradeWs.send(JSON.stringify(subscribePayload));
 };
 
-const broadcastToFrontendClients = (message) => {
-  frontendClients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(message));
-    }
-  });
-};
+
 
 module.exports = {
   connectFlattradeWebSocket,

@@ -60,6 +60,8 @@ export interface ApiVariableVariable extends Struct.CollectionTypeSchema {
     index: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
+    token: Schema.Attribute.Integer;
+    amount: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
