@@ -19,6 +19,15 @@ module.exports = {
             },
         },
         {
+            method: 'POST',
+            path: '/variables/handleFeed',
+            handler: 'api::variable.variable.handleFeed', // Your custom token handling logic
+            config: {
+              policies: [],
+              middlewares: [],
+            },
+        },
+        {
             method: 'GET',
             path: '/variables',
             handler: 'api::variable.variable.find', 
@@ -44,15 +53,6 @@ module.exports = {
               policies: [],
               middlewares: [],
             },
-        },
-        {
-            method: 'DELETE',
-            path: '/variables/:id',
-            handler: 'api::variable.variable.delete',
-            config: {
-              policies: [],
-              middlewares: [],
-            },
-        },
+        },        
     ],
 };

@@ -1,4 +1,5 @@
 const WebSocket = require('ws');
+const { env } = require('@strapi/utils');
 
 const flattradeWsUrl = 'wss://piconnect.flattrade.in/PiConnectWSTp/';
 let flattradeWs;
@@ -62,7 +63,8 @@ const handleIncomingMessage = (message, scripList) => {
       break;
 
     case 'tf':
-      console.log('Touchline feed:', message);      
+      console.log('Touchline feed:', message);
+      handleTouchlineFeed(message);            
       break;
 
     case 'uk':
@@ -84,6 +86,26 @@ const subscribeTouchline = (scripList) => {
   flattradeWs.send(JSON.stringify(subscribePayload));
 };
 
+// Process feed by sending it to the centralized controller handler
+const handleTouchlineFeed= async (feedData) => {
+  try {
+    const headers = {
+      'Authorization': `Bearer ${env('SPECIAL_TOKEN')}`, // Including the special token in the Authorization header
+      'Content-Type': 'application/json',
+  };
+    const response = await fetch('/api/variables/handleFeed', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        data: feedData
+      }),
+    });
+    const result = await response.json();
+    console.log('Feed processed by controller:', result);
+  } catch (error) {
+    console.error('Error processing feed:', error);
+  }
+};
 
 
 module.exports = {
